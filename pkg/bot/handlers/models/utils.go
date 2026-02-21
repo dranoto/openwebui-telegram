@@ -9,8 +9,6 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-var logger = slog.Default().With(slog.String("package", "Models"))
-
 func getInlineKeyboardMarkup(currentModel string) (string, [][]tele.InlineButton) {
 	var modelOptions [][]tele.InlineButton
 	modelInfoMessage := "Here are the available models: \n"
