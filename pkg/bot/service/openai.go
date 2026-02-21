@@ -15,6 +15,47 @@ import (
 
 var logger = slog.Default().With(slog.String("package", "Completion"))
 
+// OpenWebUI Model response structures
+type OpenWebUIModelsResponse struct {
+	Items []OpenWebUIModel `json:"items"`
+}
+
+type OpenWebUIModel struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Object string `json:"object"`
+}
+
+// FetchModels retrieves the list of available models from OpenWebUI API
+func FetchModels() ([]OpenWebUIModel, error) {
+	client := &http.Client{}
+	
+	// Use /api/models endpoint (OpenWebUI native API)
+	req, err := http.NewRequest(http.MethodGet, config.GlobalConfig.OpenAIAPI.Endpoint+"models", nil)
+	if err != nil {
+		logger.Error("failed to create models request", slog.Any("error", err))
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", "Bearer "+config.GlobalConfig.OpenAIAPI.APIKey)
+
+	res, err := client.Do(req)
+	if err != nil {
+		logger.Error("failed to fetch models", slog.Any("error", err))
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var modelsResp OpenWebUIModelsResponse
+	if err := json.NewDecoder(res.Body).Decode(&modelsResp); err != nil {
+		logger.Error("failed to decode models response", slog.Any("error", err))
+		return nil, err
+	}
+
+	logger.Info("fetched models", slog.Int("count", len(modelsResp.Items)))
+	return modelsResp.Items, nil
+}
+
 func generateMessages(chatID int64, promptID int, messages []contract.ChatMessage) []contract.ChatMessage {
 	parentID := store.ChatStore[chatID][promptID].Parent
 	if parentID != 0 {
